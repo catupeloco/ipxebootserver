@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251213-1922
+SCRIPT_DATE=20251213-1923
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -105,8 +105,8 @@ DEBIAN_VERSION=bookworm
 
 # For Cleaning Screen and progress bar
 LOCALIP=$(ip -br a | grep -v ^lo | grep -i UP | awk '{print $3}' | cut -d\/ -f1)
-export PROGRESS_BAR_MAX=45
-export PROGRESS_BAR_WIDTH=43
+export PROGRESS_BAR_MAX=17
+export PROGRESS_BAR_WIDTH=17
 export PROGRESS_BAR_CURRENT=0
 ########################################################################################################################################################
 cleaning_screen (){

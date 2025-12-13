@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251213-2006
+SCRIPT_DATE=20251213-2007
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err

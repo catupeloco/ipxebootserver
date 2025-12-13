@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251213-1905
+SCRIPT_DATE=20251213-1917
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -266,13 +266,6 @@ echo "Entering chroot ---------------------------------------------"
         grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=debian --recheck --no-nvram --removable  >/dev/null 2>&1
         update-grub                                                                             >/dev/null 2>&1
 
-        echo Adding local user -------------------------------------------
-        read -p \"What username do you want?: \" username
-        useradd -d /home/\$username -c local_admin_user -G sudo -m -s /bin/bash \$username
-        
-        passwd \$username
-        if [ \"\$?\" != \"0\" ] ; then echo Please repeat the password....; passwd \$username ; fi
-
         if [ \$PROC_NEEDS_UMOUNT -eq 1 ]; then
                 umount /proc
         fi
@@ -311,6 +304,15 @@ echo "Entering chroot ---------------------------------------------"
         exit" > ${ROOTFS}/root/chroot.sh
         chmod +x ${ROOTFS}/root/chroot.sh
         chroot ${ROOTFS} /bin/bash /root/chroot.sh
+
+cleaning_screen
+echo "Setting up local admin account ------------------------------"
+        echo "export LC_ALL=C LANGUAGE=C LANG=C
+        useradd -d /home/$username -G sudo -m -s /bin/bash $username
+        echo ${username}:${password} | chpasswd
+        rm /tmp/local_admin.sh" > ${ROOTFS}/tmp/local_admin.sh
+        chmod +x ${ROOTFS}/tmp/local_admin.sh
+        chroot ${ROOTFS} /bin/bash /tmp/local_admin.sh
 
 echo "Unmounting ${DEVICE} -----------------------------------------"
         umount ${DEVICE}*                2>/dev/null || true

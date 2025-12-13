@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251213-1923
+SCRIPT_DATE=20251213-1946
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -97,7 +97,10 @@ task-web-server task-ssh-server \
 sudo vim wget curl \
 network-manager iputils-ping util-linux iproute2 bind9-host isc-dhcp-client \
 grub2-common grub-efi grub-efi-amd64 \
-console-data console-setup locales"
+console-data console-setup locales \
+nfs-kernel-server nfs-common \
+atftpd \
+isc-dhcp-server"
 
 REPOSITORY_DEB="http://deb.debian.org/debian/"
 
@@ -334,6 +337,10 @@ echo "Unmounting ${DEVICE} -----------------------------------------"
         umount ${ROOTFS}/boot/efi        2>/dev/null || true
         umount ${ROOTFS}${CACHE_FOLDER}  2>/dev/null || true
         umount ${ROOTFS}                 2>/dev/null || true
+
+PROGRESS_BAR_CURRENT=$PROGRESS_BAR_MAX
+PROGRESS_BAR_FILLED_LEN=$PROGRESS_BAR_CURRENT
+PROGRESS_BAR_EMPTY_LEN=0
 
 cleaning_screen
 echo "END of the road!! keep up the good work ---------------------"

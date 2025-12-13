@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251213-0902
+SCRIPT_DATE=20251213-0911
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -11,8 +11,9 @@ echo "script $SCRIPT_DATE"
 echo ---------------------------------------------------------------------------
 echo "Installing dependencies for this script ---------------------"
         apt update                                                  >/dev/null 2>&1
-        apt install dosfstools parted btrfs-progs vim multistrap wget curl gnupg2 \
-		    netselect-apt -y >/dev/null 2>&1
+        apt install dosfstools parted gnupg2 \
+		    wget curl openssh-server multitrap \
+		    netselect-apt btrfs-progs vim -y >/dev/null 2>&1
 #####################################################################################################
 #Selections
 #####################################################################################################
@@ -72,29 +73,77 @@ fi
 
 #VARIABLES
 
-
+# Mount Points
+CACHE_FOLDER=/tmp/resources-fs
+ROOTFS=/tmp/os-rootfs
+mkdir $CACHE_FOLDER $ROOTFS 2>/dev/null || true
 cd /tmp
-DEVICE=$1
-CACHE_FOLDER=/var/cache/apt/archives
-ROOTFS=/tmp/installing-rootfs
+
+# Partition Fixed Sizes
+PART_EFI_END=512
+PART_CZ_END=12512
+
+# Cloning software for recovery partition
+RECOVERYFS=/tmp/recovery-rootfs
+CLONEZILLA_KEYBOARD=latam
+DOWNLOAD_DIR_CLONEZILLA=${CACHE_FOLDER}/Clonezilla
+BASEURL_CLONEZILLA_FAST="https://free.nchc.org.tw/clonezilla-live/stable/"
+BASEURL_CLONEZILLA_SLOW="https://sourceforge.net/projects/clonezilla/files/latest/download"
+
+# Apt certificate repository folder
 APT_CONFIG="`command -v apt-config 2> /dev/null`"
 eval $("$APT_CONFIG" shell APT_TRUSTEDDIR 'Dir::Etc::trustedparts/d')
 
+# Apt packages list for installing with mmdebstrap
+# NOTE: Fictional variables below are only for title purposes ########################################
 INCLUDES_DEB="apt linux-image-amd64 initramfs-tools zstd gnupg systemd \
 task-web-server task-ssh-server \
 sudo vim wget curl \
 network-manager iputils-ping util-linux iproute2 bind9-host isc-dhcp-client \
 grub2-common grub-efi grub-efi-amd64 \
 console-data console-setup locales"
-#Kernel, initrd, basics
-#tools
-#network
-#boot
-#idioma e idioma terminal tty
 
 REPOSITORY_DEB="http://deb.debian.org/debian/"
 
 DEBIAN_VERSION=bookworm
+
+# For Cleaning Screen and progress bar
+LOCALIP=$(ip -br a | grep -v ^lo | grep -i UP | awk '{print $3}' | cut -d\/ -f1)
+export PROGRESS_BAR_MAX=45
+export PROGRESS_BAR_WIDTH=43
+export PROGRESS_BAR_CURRENT=0
+########################################################################################################################################################
+cleaning_screen (){
+# for clear screen on tty (clear doesnt work)
+printf "\033c"
+echo "============================================================="
+echo "Installing on Device ${DEVICE} with ${username} as local admin :
+        - Debian ${DEBIAN_VERSION} from ${REPOSITORY_DEB} (FASTEST REPOSITORY at your location) with :
+                - BTRFS, GRUB-BTRFS and Timeshift for snapshots of root file system.
+                - Unattended upgrades, Virtual Machine Manager (KVM/QEMU).
+To follow extra details, use: Alt plus left or right arrows"
+grep iso /proc/cmdline >/dev/null && \
+echo "For remote access during installation, you can connect remotely : ssh user@$LOCALIP (password is \"live\") "
+######## PROGRESS BAR ###################################################
+echo "============================================================="
+set +e
+if [ $PROGRESS_BAR_CURRENT -eq $PROGRESS_BAR_MAX ]; then
+        let "PROGRESS_BAR_PERCENT = 100"
+        let "PROGRESS_BAR_FILLED_LEN = PROGRESS_BAR_WIDTH"
+else
+        let "PROGRESS_BAR_PERCENT = PROGRESS_BAR_CURRENT * 100 / PROGRESS_BAR_MAX"
+        let "PROGRESS_BAR_FILLED_LEN = PROGRESS_BAR_CURRENT * PROGRESS_BAR_WIDTH / PROGRESS_BAR_MAX"
+fi
+let "PROGRESS_BAR_EMPTY_LEN = PROGRESS_BAR_WIDTH - PROGRESS_BAR_FILLED_LEN"
+PROGRESS_BAR_FILLED_BAR=$(printf "%${PROGRESS_BAR_FILLED_LEN}s" | tr ' ' '#')
+PROGRESS_BAR_EMPTY_BAR=$(printf "%${PROGRESS_BAR_EMPTY_LEN}s" | tr ' ' '-')
+printf "\rProgress: [%s%s] %3d%% \033[K" "$PROGRESS_BAR_FILLED_BAR" "$PROGRESS_BAR_EMPTY_BAR" "$PROGRESS_BAR_PERCENT"
+let "PROGRESS_BAR_CURRENT += 1"
+sleep 0.05
+printf "\n=============================================================\n"
+set -e
+#########################################################################
+}
 
 
 echo "Unmounting ${DEVICE}  ----------------------------------------"

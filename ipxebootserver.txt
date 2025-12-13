@@ -1,0 +1,19 @@
+#      https://vicentech.com.ar/ipxebootserver ->>
+#  ->> https://vicentech.com.ar/wp-content/uploads/ipxebootserver.txt
+# Cleaning script and resetting terminal for multiple run fixes
+reset
+printf "\033c"
+echo --Installing git
+sudo apt install git -y >/dev/null 2>&1
+
+if [ -d $HOME/ipxebootserver ] ; then 
+	rm -rf $HOME/ipxebootserver
+fi
+
+echo --Cloning repository
+while [ ! -f ipxebootserver/setup.sh ] ; do
+	git clone https://github.com/catupeloco/ipxebootserver >/dev/null 2>&1
+done
+
+echo --Running main script
+time sudo bash $HOME/ipxebootserver/setup.sh

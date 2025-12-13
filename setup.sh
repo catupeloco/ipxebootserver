@@ -1,16 +1,80 @@
 #!/bin/bash
-#VARIABLES
-if [ -z $1 ] ; then
-        echo Usage: "time sudo $0 /dev/vdb"
-        exit
+SCRIPT_DATE=
+set -e # Exit on error
+LOG=/tmp/server.log
+ERR=/tmp/server.err
+SELECTIONS=/tmp/selections
+echo ---------------------------------------------------------------------------
+timedatectl set-timezone America/Argentina/Buenos_Aires
+echo "now    $(date +'%Y%m%d-%H%M')"
+echo "script $SCRIPT_DATE"
+echo ---------------------------------------------------------------------------
+echo "Installing dependencies for this script ---------------------"
+        apt update                                                  >/dev/null 2>&1
+        apt install dosfstools parted btrfs-progs vim multistrap wget curl gnupg2 -y >/dev/null 2>&1
+#####################################################################################################
+#Selections
+#####################################################################################################
+if [ -f $SELECTIONS ] ; then
+        echo Skiping questions, you may delete $SELECTIONS if you change your mind
+        source $SELECTIONS
+else
+        reset
+        #Finding Fastest repo in the background
+        netselect-apt -n -s -a amd64 trixie 2>&1 | grep -A1 "fastest valid for http" | tail -n1 > /tmp/fastest_repo &
+        REPOSITORY_DEB_PID=$!
+
+        disk_list=$(lsblk -dn -o NAME,SIZE,TYPE | awk '$3=="disk"{print $1,$2}')
+        menu_options=()
+        while read -r name size; do
+              menu_options+=("/dev/$name" "$size")
+        done <<< "$disk_list"
+        DEVICE=$(whiptail --title "Disk selection" --menu "Choose a disk from below and press enter to begin:" 20 60 10 "${menu_options[@]}" 3>&1 1>&2 2>&3)
+
+        #####################################################################################################
+        username=$(whiptail --title "Local admin creation" --inputbox "Type a username:" 20 60  3>&1 1>&2 2>&3)
+        REPEAT=yes
+        while [ "$REPEAT" == "yes" ] ; do
+                password=$( whiptail --title "Local admin creation" --passwordbox "Type a password:"                  20 60  3>&1 1>&2 2>&3)
+                password2=$(whiptail --title "Local admin creation" --passwordbox "Just in case type it again:"       20 60  3>&1 1>&2 2>&3)
+                if [ "$password" == "$password2" ] ; then
+                        REPEAT=no
+                else
+                        #echo "ERROR: Passwords entered dont match"
+                            whiptail --title "Local admin creation" \
+                                     --msgbox "ERROR: Passwords dont match, try again" 20 60  3>&1 1>&2 2>&3
+                fi
+        done
+        #####################################################################################################
+        echo "Detecting fastest debian mirror, please wait ----------------"
+        #Waiting to background process to finish
+        wait $REPOSITORY_DEB_PID
+        REPOSITORY_DEB_FAST=$(cat /tmp/fastest_repo)
+        REPOSITORY_DEB_FAST=${REPOSITORY_DEB_FAST// /}
+        REPOSITORY_DEB_STANDARD="http://deb.debian.org/debian/"
+        REPOSITORY_DEB=$(whiptail --title "Debian respository" --menu "Choose one option:" 20 60 10 \
+                           "${REPOSITORY_DEB_FAST}" "Fastest detected" \
+                       "${REPOSITORY_DEB_STANDARD}" "Default Debian"   \
+               3>&1 1>&2 2>&3)
+
+        #####################################################################################################
+        echo export DEVICE="$DEVICE"                            >  $SELECTIONS
+        echo export username="$username"                        >> $SELECTIONS
+        echo export password="$password"                        >> $SELECTIONS
+        echo export REPOSITORY_DEB="${REPOSITORY_DEB}"          >> $SELECTIONS
+
 fi
 
-set -e # Exit on error
+
+
+
+
+#VARIABLES
+
+
 cd /tmp
 DEVICE=$1
 CACHE_FOLDER=/var/cache/apt/archives
-LOG=${CACHE_FOLDER}/multistrap.log
-ERR=${CACHE_FOLDER}/multistrap.err
 ROOTFS=/tmp/installing-rootfs
 APT_CONFIG="`command -v apt-config 2> /dev/null`"
 eval $("$APT_CONFIG" shell APT_TRUSTEDDIR 'Dir::Etc::trustedparts/d')
@@ -31,9 +95,6 @@ REPOSITORY_DEB="http://deb.debian.org/debian/"
 
 DEBIAN_VERSION=bookworm
 
-echo "Installing dependencies for this script ---------------------"
-        apt update                                                  >/dev/null 2>&1
-        apt install dosfstools parted btrfs-progs vim multistrap wget curl gnupg2 -y >/dev/null 2>&1
 
 echo "Unmounting ${DEVICE}  ----------------------------------------"
         umount ${DEVICE}*               2>/dev/null || true

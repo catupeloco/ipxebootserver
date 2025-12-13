@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=
+SCRIPT_DATE=20251213-0902
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -11,7 +11,8 @@ echo "script $SCRIPT_DATE"
 echo ---------------------------------------------------------------------------
 echo "Installing dependencies for this script ---------------------"
         apt update                                                  >/dev/null 2>&1
-        apt install dosfstools parted btrfs-progs vim multistrap wget curl gnupg2 -y >/dev/null 2>&1
+        apt install dosfstools parted btrfs-progs vim multistrap wget curl gnupg2 \
+		    netselect-apt -y >/dev/null 2>&1
 #####################################################################################################
 #Selections
 #####################################################################################################

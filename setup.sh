@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251213-1918
+SCRIPT_DATE=20251213-1922
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -66,10 +66,6 @@ else
         echo export REPOSITORY_DEB="${REPOSITORY_DEB}"          >> $SELECTIONS
 
 fi
-
-
-
-
 
 #VARIABLES
 
@@ -145,7 +141,7 @@ set -e
 #########################################################################
 }
 
-
+cleaning_screen
 echo "Unmounting ${DEVICE}  ----------------------------------------"
         umount ${DEVICE}*               2>/dev/null || true
         umount ${ROOTFS}/dev/pts        2>/dev/null || true
@@ -158,27 +154,33 @@ echo "Unmounting ${DEVICE}  ----------------------------------------"
         umount ${ROOTFS}${CACHE_FOLDER} 2>/dev/null || true
         umount ${ROOTFS}                2>/dev/null || true
 
+cleaning_screen
 echo "Setting partition table to GPT (UEFI) -----------------------"
         parted ${DEVICE} --script mktable gpt                   > /dev/null 2>&1
 
+cleaning_screen
 echo "Creating EFI partition --------------------------------------"
         parted ${DEVICE} --script mkpart EFI fat16 1MiB 10MiB   > /dev/null 2>&1
         parted ${DEVICE} --script set 1 msftdata on             > /dev/null 2>&1
 
+cleaning_screen	
 echo "Creating OS partition ---------------------------------------"
         parted ${DEVICE} --script mkpart LINUX btrfs 10MiB 100% > /dev/null 2>&1
         sleep 2
 
+cleaning_screen
 echo "Formating partitions ----------------------------------------"
         mkfs.vfat -n EFI ${DEVICE}1                             > /dev/null 2>&1
         mkfs.btrfs -f -L LINUX ${DEVICE}2                       > /dev/null 2>&1
 
+cleaning_screen
 echo "Mounting OS partition ---------------------------------------"
         mkdir -p ${ROOTFS}                                      > /dev/null 2>&1
         mount ${DEVICE}2 ${ROOTFS}                              > /dev/null 2>&1
         mkdir -p ${ROOTFS}${CACHE_FOLDER}                       > /dev/null 2>&1
         mount --bind ${CACHE_FOLDER} ${ROOTFS}${CACHE_FOLDER}
 
+cleaning_screen
 echo "Creating configuration file for multistrap ------------------"
 echo "[General]
 arch=amd64
@@ -196,10 +198,12 @@ keyring=debian-archive-keyring
 suite=${DEBIAN_VERSION}
 components=main contrib non-free non-free-firmware" > multistrap.conf
 
+cleaning_screen
 echo "Running multistrap ------------------------------------------"
         SILENCE="Warning: unrecognised value 'no' for Multi-Arch field in|multistrap-googlechrome.list"
         multistrap -f multistrap.conf >$LOG 2> >(grep -vE "$SILENCE" > $ERR)
 
+cleaning_screen
 echo "Configurating the network -----------------------------------"
         cp /etc/resolv.conf ${ROOTFS}/etc/resolv.conf
         mkdir -p ${ROOTFS}/etc/network/interfaces.d/            > /dev/null 2>&1
@@ -213,10 +217,12 @@ echo "Configurating the network -----------------------------------"
         echo "ff02::2 ip6-allrouters"                       >> ${ROOTFS}/etc/hosts
         touch ${ROOTFS}/ImageDate.$(date +'%Y-%m-%d')
 
+cleaning_screen
 echo "Mounting EFI partition --------------------------------------"
         mkdir -p ${ROOTFS}/boot/efi
         mount ${DEVICE}1 ${ROOTFS}/boot/efi
 
+cleaning_screen
 echo "Generating fstab --------------------------------------------"
         root_uuid="$(blkid | grep ^$DEVICE | grep ' LABEL="LINUX" ' | grep -o ' UUID="[^"]\+"' | sed -e 's/^ //' )"
         efi_uuid="$(blkid  | grep ^$DEVICE | grep ' LABEL="EFI" '   | grep -o ' UUID="[^"]\+"' | sed -e 's/^ //' )"
@@ -224,7 +230,7 @@ echo "Generating fstab --------------------------------------------"
         echo "$root_uuid /        btrfs defaults 0 1"  > $FILE
         echo "$efi_uuid  /boot/efi vfat defaults 0 1" >> $FILE
 
-
+cleaning_screen
 echo "Getting ready for chroot ------------------------------------"
         mount --bind /dev ${ROOTFS}/dev
         mount -t devpts /dev/pts ${ROOTFS}/dev/pts
@@ -233,6 +239,7 @@ echo "Getting ready for chroot ------------------------------------"
         mount -t sysfs sysfs ${ROOTFS}/sys
         mount -t tmpfs tmpfs ${ROOTFS}/tmp
 
+cleaning_screen
 echo "Setting Keyboard maps for non graphical console -------------"
         # FIX DEBIAN BUG
         keyboard_maps=$(curl -s https://mirrors.edge.kernel.org/pub/linux/utils/kbd/ | grep tar.gz | cut -d'"' -f2 | tail -n1)
@@ -244,6 +251,7 @@ echo "Setting Keyboard maps for non graphical console -------------"
         mkdir -p ${ROOTFS}/usr/share/keymaps/
         cp -r * ${ROOTFS}/usr/share/keymaps/  >>$LOG 2>>$ERR
 
+cleaning_screen
 echo "Entering chroot ---------------------------------------------"
         echo "#!/bin/bash
         export DOWNLOAD_DIR=${DOWNLOAD_DIR}
@@ -314,6 +322,7 @@ echo "Setting up local admin account ------------------------------"
         chmod +x ${ROOTFS}/tmp/local_admin.sh
         chroot ${ROOTFS} /bin/bash /tmp/local_admin.sh
 
+cleaning_screen
 echo "Unmounting ${DEVICE} -----------------------------------------"
         umount ${DEVICE}*                2>/dev/null || true
         umount ${ROOTFS}/dev/pts         2>/dev/null || true
@@ -326,4 +335,5 @@ echo "Unmounting ${DEVICE} -----------------------------------------"
         umount ${ROOTFS}${CACHE_FOLDER}  2>/dev/null || true
         umount ${ROOTFS}                 2>/dev/null || true
 
+cleaning_screen
 echo "END of the road!! keep up the good work ---------------------"

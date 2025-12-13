@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251213-1917
+SCRIPT_DATE=20251213-1918
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -296,9 +296,9 @@ echo "Entering chroot ---------------------------------------------"
         DEBCONF_NONINTERACTIVE_SEEN=true dpkg-reconfigure -f noninteractive console-setup
         DEBCONF_NONINTERACTIVE_SEEN=true dpkg-reconfigure -f noninteractive keyboard-configuration
         sed -i '/# es_AR.UTF-8 UTF-8/s/^# //g' /etc/locale.gen
-        locale-gen
+        locale-gen >/dev/null
         DEBCONF_NONINTERACTIVE_SEEN=true dpkg-reconfigure -f noninteractive locales
-        update-locale LANG=es_AR.UTF-8
+        update-locale LANG=es_AR.UTF-8 >/dev/null
         locale
 
         exit" > ${ROOTFS}/root/chroot.sh

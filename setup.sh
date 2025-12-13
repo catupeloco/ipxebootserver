@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251213-1946
+SCRIPT_DATE=20251213-2006
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -145,6 +145,21 @@ set -e
 }
 
 cleaning_screen
+echo "Inicializing logs tails -------------------------------------"
+        touch $LOG
+        touch $ERR
+set +e
+        # RUNNING TAILS ON SECOND AND THIRD TTYs
+        if ! pgrep tail ; then
+                setsid bash -c 'exec watch sudo fdisk -l                                                                                <> /dev/tty2 >&0 2>&1' &
+                setsid bash -c 'exec watch sudo df -h                                                                                   <> /dev/tty3 >&0 2>&1' &
+                setsid bash -c 'exec watch sudo lsblk -f                                                                                <> /dev/tty4 >&0 2>&1' &
+                setsid bash -c 'exec tail -f '$LOG'                                                                                     <> /dev/tty5 >&0 2>&1' &
+                setsid bash -c 'exec tail -f '$ERR'                                                                                     <> /dev/tty6 >&0 2>&1' &
+        fi
+set -e
+
+cleaning_screen
 echo "Unmounting ${DEVICE}  ----------------------------------------"
         umount ${DEVICE}*               2>/dev/null || true
         umount ${ROOTFS}/dev/pts        2>/dev/null || true
@@ -163,18 +178,31 @@ echo "Setting partition table to GPT (UEFI) -----------------------"
 
 cleaning_screen
 echo "Creating EFI partition --------------------------------------"
-        parted ${DEVICE} --script mkpart EFI fat16 1MiB 10MiB   > /dev/null 2>&1
-        parted ${DEVICE} --script set 1 msftdata on             > /dev/null 2>&1
+        parted ${DEVICE} --script mkpart EFI fat32 1MiB ${PART_EFI_END}MiB   > /dev/null 2>&1
+        parted ${DEVICE} --script set 1 esp on                               > /dev/null 2>&1
+
+cleaning_screen	
+echo "Creating Clonezilla partition -------------------------------"
+        parted "${DEVICE}" --script mkpart CLONEZILLA ext4 ${PART_EFI_END}MiB ${PART_CZ_END}MiB # > /dev/null 2>&1
 
 cleaning_screen	
 echo "Creating OS partition ---------------------------------------"
-        parted ${DEVICE} --script mkpart LINUX btrfs 10MiB 100% > /dev/null 2>&1
+        parted "${DEVICE}" --script mkpart LINUX btrfs ${PART_OS_START}MiB ${PART_OS_END}MiB    # >/dev/null 2>&1
         sleep 2
 
 cleaning_screen
 echo "Formating partitions ----------------------------------------"
-        mkfs.vfat -n EFI ${DEVICE}1                             > /dev/null 2>&1
-        mkfs.btrfs -f -L LINUX ${DEVICE}2                       > /dev/null 2>&1
+        if echo ${DEVICE} | grep -i nvme > /dev/null ; then
+                DEVICE=${DEVICE}p
+        fi
+	# EVEN IF THE PARTITION IS FORMATTED I TRY TO CHECK THE FILESYSTEM
+	fsck -y "${DEVICE}"1                           >/dev/null 2>&1 || true
+	fsck -y "${DEVICE}"2                           >/dev/null 2>&1 || true
+	fsck -y "${DEVICE}"3                           >/dev/null 2>&1 || true
+	fsck -y "${DEVICE}"4                           >/dev/null 2>&1 || true
+	mkfs.vfat  -n EFI        "${DEVICE}"1 -F                       || true
+	mkfs.ext4  -L CLONEZILLA "${DEVICE}"2 -F                       || true
+	mkfs.btrfs -L LINUX      "${DEVICE}"3 -f                       || true
 
 cleaning_screen
 echo "Mounting OS partition ---------------------------------------"

@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251214-1252
+SCRIPT_DATE=20251214-1253
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -224,7 +224,6 @@ echo "Formating partitions ----------------------------------------"
 	fsck -y "${DEVICE}"3                           >/dev/null 2>&1 || true
 	fsck -y "${DEVICE}"4                           >/dev/null 2>&1 || true
 	mkfs.vfat  -n EFI        "${DEVICE}"1                          || true
-	read -p "pause"
 	mkfs.btrfs -L LINUX      "${DEVICE}"2 -f                       || true
 	read -p "pause"
 	mkfs.ext4  -L CLONEZILLA "${DEVICE}"3 -F                       || true

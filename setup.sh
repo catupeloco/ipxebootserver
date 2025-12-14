@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251214-1349
+SCRIPT_DATE=20251214-1351
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -176,8 +176,9 @@ set -e
 
 cleaning_screen
 echo "Inicializing logs tails -------------------------------------"
-        touch $LOG
-        touch $ERR
+        > $LOG
+        > $ERR
+
 set +e
         # RUNNING TAILS ON SECOND AND THIRD TTYs
         if ! pgrep tail ; then

@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251214-1331
+SCRIPT_DATE=20251214-1348
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -119,8 +119,7 @@ whiptail \
 ${CRON_TOOLS} \
 anacron cron cron-daemon-common \
 ${NETWORK_PACKAGES_AND_DRIVERS} \
-bind9-host dfu-util dnsmasq-base ethtool ifupdown iproute2 iputils-ping linux-sysctl-defaults isc-dhcp-client \
-network-manager network-manager-applet network-manager-openconnect network-manager-l2tp network-manager-l10n \
+bind9-host dfu-util dnsmasq-base ethtool ifupdown iproute2 iputils-ping isc-dhcp-client network-manager  \
 powermgmt-base util-linux wpasupplicant xfce4-power-manager xfce4-power-manager-plugins \
 firmware-ath9k-htc firmware-linux firmware-linux-free firmware-realtek \
 amd64-microcode intel-microcode \
@@ -134,8 +133,6 @@ unattended-upgrades apt-utils apt-listchanges \
 nfs-kernel-server nfs-common \
 atftpd \
 isc-dhcp-server"
-
-REPOSITORY_DEB="http://deb.debian.org/debian/"
 
 DEBIAN_VERSION=bookworm
 

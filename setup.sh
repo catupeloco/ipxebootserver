@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251213-2253
+SCRIPT_DATE=20251214-1236
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -67,7 +67,9 @@ else
 
 fi
 
+#####################################################################################################
 #VARIABLES
+#####################################################################################################
 
 # Mount Points
 CACHE_FOLDER=/tmp/resources-fs
@@ -76,8 +78,24 @@ mkdir $CACHE_FOLDER $ROOTFS 2>/dev/null || true
 cd /tmp
 
 # Partition Fixed Sizes
-PART_EFI_END=512
-PART_CZ_END=12512
+	PART_EFI_SIZE=512 
+	PART_OS_SIZE=95300
+	PART_CZ_SIZE=10240
+# Device Size
+	DISK_SIZE=$(parted "${DEVICE}" --script unit MiB print | awk '/Disk/ {print $3}' | tr -d 'MiB')
+# EFI Partition
+	PART_EFI_START=1
+	PART_EFI_END=$((PART_EFI_SIZE))
+# OS Partition
+	PART_OS_START=$((PART_EFI_END + 1))
+	PART_OS_END=$((PART_OS_START + PART_OS_SIZE - 1))
+# Clonezilla Parition
+	PART_CZ_START=$((PART_OS_END + 1))
+	PART_CZ_END=$((PART_CZ_START + PART_CZ_SIZE - 1))
+
+# Overprovisioning Partition
+	PART_REST_START=$((PART_CZ_END + 1))
+	PART_REST_END=${DISK_SIZE}
 
 # Cloning software for recovery partition
 RECOVERYFS=/tmp/recovery-rootfs
@@ -178,17 +196,22 @@ echo "Setting partition table to GPT (UEFI) -----------------------"
 
 cleaning_screen
 echo "Creating EFI partition --------------------------------------"
-        parted ${DEVICE} --script mkpart EFI fat32 1MiB ${PART_EFI_END}MiB   > /dev/null 2>&1
+        parted ${DEVICE} --script mkpart EFI fat32 ${PART_EFI_START}MiB ${PART_EFI_END}MiB   > /dev/null 2>&1
         parted ${DEVICE} --script set 1 esp on                               > /dev/null 2>&1
-
-cleaning_screen	
-echo "Creating Clonezilla partition -------------------------------"
-        parted "${DEVICE}" --script mkpart CLONEZILLA ext4 ${PART_EFI_END}MiB ${PART_CZ_END}MiB # > /dev/null 2>&1
 
 cleaning_screen	
 echo "Creating OS partition ---------------------------------------"
         parted "${DEVICE}" --script mkpart LINUX btrfs ${PART_OS_START}MiB ${PART_OS_END}MiB    # >/dev/null 2>&1
         sleep 2
+
+cleaning_screen	
+echo "Creating Clonezilla partition -------------------------------"
+        parted "${DEVICE}" --script mkpart CLONEZILLA ext4 ${PART_CZ_END}MiB ${PART_CZ_END}MiB # > /dev/null 2>&1
+
+cleaning_screen	
+echo "Creating Overprovisioning partition -------------------------------"
+        parted "${DEVICE}" --script mkpart RESOURCES ext4 ${PART_CZ_END}MiB ${PART_CZ_END}MiB # > /dev/null 2>&1
+
 
 cleaning_screen
 echo "Formating partitions ----------------------------------------"
@@ -199,9 +222,11 @@ echo "Formating partitions ----------------------------------------"
 	fsck -y "${DEVICE}"1                           >/dev/null 2>&1 || true
 	fsck -y "${DEVICE}"2                           >/dev/null 2>&1 || true
 	fsck -y "${DEVICE}"3                           >/dev/null 2>&1 || true
+	fsck -y "${DEVICE}"4                           >/dev/null 2>&1 || true
 	mkfs.vfat  -n EFI        "${DEVICE}"1 -F                       || true
-	mkfs.ext4  -L CLONEZILLA "${DEVICE}"2 -F                       || true
-	mkfs.btrfs -L LINUX      "${DEVICE}"3 -f                       || true
+	mkfs.btrfs -L LINUX      "${DEVICE}"2 -f                       || true
+	mkfs.ext4  -L CLONEZILLA "${DEVICE}"3 -F                       || true
+	mkfs.ext4  -L RESOURCES  "${DEVICE}"4 -F                       || true
 
 cleaning_screen
 echo "Mounting OS partition ---------------------------------------"

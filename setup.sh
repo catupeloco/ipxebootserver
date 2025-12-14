@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251214-1255
+SCRIPT_DATE=20251214-1256
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -226,8 +226,7 @@ echo "Formating partitions ----------------------------------------"
 	mkfs.vfat  -n EFI        "${DEVICE}"1          >/dev/null 2>&1 || true
 	mkfs.btrfs -L LINUX      "${DEVICE}"2 -f       >/dev/null 2>&1 || true
 	mkfs.ext4  -L CLONEZILLA "${DEVICE}"3 -F       >/dev/null 2>&1 || true
-	mkfs.ext4  -L RESOURCES  "${DEVICE}"4 -F                       || true
-	read -p "pause"
+	mkfs.ext4  -L RESOURCES  "${DEVICE}"4 -F       >/dev/null 2>&1 || true
 
 cleaning_screen
 echo "Mounting OS partition ---------------------------------------"

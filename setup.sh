@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251214-1236
+SCRIPT_DATE=20251214-1245
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -94,8 +94,8 @@ cd /tmp
 	PART_CZ_END=$((PART_CZ_START + PART_CZ_SIZE - 1))
 
 # Overprovisioning Partition
-	PART_REST_START=$((PART_CZ_END + 1))
-	PART_REST_END=${DISK_SIZE}
+	PART_OP_START=$((PART_CZ_END + 1))
+	PART_OP_END=${DISK_SIZE}
 
 # Cloning software for recovery partition
 RECOVERYFS=/tmp/recovery-rootfs
@@ -206,11 +206,11 @@ echo "Creating OS partition ---------------------------------------"
 
 cleaning_screen	
 echo "Creating Clonezilla partition -------------------------------"
-        parted "${DEVICE}" --script mkpart CLONEZILLA ext4 ${PART_CZ_END}MiB ${PART_CZ_END}MiB # > /dev/null 2>&1
+        parted "${DEVICE}" --script mkpart CLONEZILLA ext4 ${PART_CZ_START}MiB ${PART_CZ_END}MiB # > /dev/null 2>&1
 
 cleaning_screen	
 echo "Creating Overprovisioning partition -------------------------------"
-        parted "${DEVICE}" --script mkpart RESOURCES ext4 ${PART_CZ_END}MiB ${PART_CZ_END}MiB # > /dev/null 2>&1
+        parted "${DEVICE}" --script mkpart RESOURCES ext4 ${PART_OP_START}MiB ${PART_OP_END}MiB # > /dev/null 2>&1
 
 
 cleaning_screen

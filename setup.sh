@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251214-1348
+SCRIPT_DATE=20251214-1349
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -184,8 +184,8 @@ set +e
                 setsid bash -c 'exec watch sudo fdisk -l                                                                                <> /dev/tty2 >&0 2>&1' &
                 setsid bash -c 'exec watch sudo df -h                                                                                   <> /dev/tty3 >&0 2>&1' &
                 setsid bash -c 'exec watch sudo lsblk -f                                                                                <> /dev/tty4 >&0 2>&1' &
-                setsid bash -c 'exec tail -f '$LOG'                                                                                     <> /dev/tty5 >&0 2>&1' &
-                setsid bash -c 'exec tail -f '$ERR'                                                                                     <> /dev/tty6 >&0 2>&1' &
+                setsid bash -c 'exec tail -F '$LOG'                                                                                     <> /dev/tty5 >&0 2>&1' &
+                setsid bash -c 'exec tail -F '$ERR'                                                                                     <> /dev/tty6 >&0 2>&1' &
         fi
 set -e
 

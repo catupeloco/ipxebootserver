@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251214-1245
+SCRIPT_DATE=20251214-1247
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -95,7 +95,7 @@ cd /tmp
 
 # Overprovisioning Partition
 	PART_OP_START=$((PART_CZ_END + 1))
-	PART_OP_END=${DISK_SIZE}
+	PART_OP_END=$((DISK_SIZE - 1 ))
 
 # Cloning software for recovery partition
 RECOVERYFS=/tmp/recovery-rootfs

@@ -22,8 +22,8 @@ In this instance, the goal is to build a tftp and nfs server image from where a 
   - UEFI support.
   - 130 GB or more storage. The drive will be partitioned as follows :
     1. EFI partition
-    2. Clonezilla + Recovery partition
-    3. System partition
+    2. System partition
+    3. Clonezilla + Recovery partition
     4. Temporary partition to download resources (can be deleted afterward to allow for [Over-provisioning](https://www.kingston.com/en/blog/pc-performance/overprovisioning)
 
 # Installation Steps.

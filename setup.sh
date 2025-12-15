@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1432
+SCRIPT_DATE=20251215-1439
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -11,7 +11,7 @@ echo "script $SCRIPT_DATE"
 echo ---------------------------------------------------------------------------
 echo "Installing dependencies for this script ---------------------"
         apt update                                                  >/dev/null 2>&1
-        apt install dosfstools parted gnupg2 aria2 \
+        apt install dosfstools parted gnupg2 aria2 unzip \
 		    wget curl openssh-server multistrap \
 		    netselect-apt btrfs-progs vim -y >/dev/null 2>&1
 #####################################################################################################

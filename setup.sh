@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1100
+SCRIPT_DATE=20251215-1101
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -11,7 +11,7 @@ echo "script $SCRIPT_DATE"
 echo ---------------------------------------------------------------------------
 echo "Installing dependencies for this script ---------------------"
         apt update                                                  >/dev/null 2>&1
-        apt install dosfstools parted gnupg2 \
+        apt install dosfstools parted gnupg2 aria2 \
 		    wget curl openssh-server multistrap \
 		    netselect-apt btrfs-progs vim -y >/dev/null 2>&1
 #####################################################################################################
@@ -257,7 +257,7 @@ echo "Downloading external software -------------------------------"
         esac
 
         let "PROGRESS_BAR_CURRENT += 1"
-        echo "---Parallel Downloading of Keyboard Maps, Libreoffice, Draw.io, MarkText and Clonezilla"
+        echo "---Parallel Downloading of Keyboard Maps and Clonezilla"
 FILES_TO_DOWNLOAD=(
 "${KEYBOARD_MAPS_DOWNLOAD_DIR}/${KEYBOARD_MAPS}"
    "${DOWNLOAD_DIR_CLONEZILLA}/${FILE_CLONEZILLA}"

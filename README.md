@@ -20,7 +20,7 @@ In this instance, the goal is to build a tftp and nfs server image from where a 
 - ***USB thumb drive :*** if you choose to use ```dd``` command, it will be formatted.
 - ***Laptop or desktop with:***
   - UEFI support.
-  - 32 GB or more storage. The drive will be partitioned as follows :
+  - 130 GB or more storage. The drive will be partitioned as follows :
     1. EFI partition
     2. Clonezilla + Recovery partition
     3. System partition

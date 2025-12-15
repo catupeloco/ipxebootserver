@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1440
+SCRIPT_DATE=20251215-1445
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -315,7 +315,7 @@ while [ ! -z "$PENDING" ] ; do
 done
 
 ###########################Parallel Downloads fixes############################################
-echo "---Recovery partition"
+echo -e "\n---Recovery partition"
         mkdir -p ${RECOVERYFS}                                  > /dev/null 2>&1
         mount "${DEVICE}"3 ${RECOVERYFS}                        > /dev/null 2>&1
 

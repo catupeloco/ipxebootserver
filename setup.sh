@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1615
+SCRIPT_DATE=20251215-1724
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -377,6 +377,8 @@ mount /dev/%%BASE%%2 /mnt/%%BASE%%2 2>/dev/null
 
 cd /mnt/%%BASE%%2/
 rm -rf \$(ls /mnt/%%BASE%%2/ | grep -v boot)
+
+cp -p /mnt/%%BASE%%2/boot/grub/grub.cfg /mnt/%%BASE%%2/boot/grub/grub.cfg.bak
 sed -i 's/timeout=30/timeout=0/g'                                                                       /mnt/%%BASE%%2/boot/grub/grub.cfg
 sed -i 's/timeout=5/timeout=0/g'                                                                        /mnt/%%BASE%%2/boot/grub/grub.cfg
 sed -i '/### BEGIN \/etc\/grub.d\/10_linux ###/,/### END \/etc\/grub.d\/10_linux ###/d'                 /mnt/%%BASE%%2/boot/grub/grub.cfg

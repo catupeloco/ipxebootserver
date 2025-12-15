@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1431
+SCRIPT_DATE=20251215-1432
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -317,7 +317,7 @@ done
 ###########################Parallel Downloads fixes############################################
 echo "---Recovery partition"
         mkdir -p ${RECOVERYFS}                                  > /dev/null 2>&1
-        mount "${DEVICE}"2 ${RECOVERYFS}                        > /dev/null 2>&1
+        mount "${DEVICE}"3 ${RECOVERYFS}                        > /dev/null 2>&1
 
         let "PROGRESS_BAR_CURRENT += 1"
 echo "----Cleaning files just in case"

@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1539
+SCRIPT_DATE=20251215-1541
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -131,13 +131,14 @@ anacron cron cron-daemon-common \
 ${NETWORK_PACKAGES_AND_DRIVERS} \
 bind9-host dfu-util dnsmasq-base ethtool ifupdown iproute2 iputils-ping isc-dhcp-client network-manager net-tools ufw \
 powermgmt-base util-linux firmware-ath9k-htc firmware-linux firmware-linux-free firmware-realtek amd64-microcode intel-microcode \
-${BOOT_PACKAGES}  \
+${BOOT_PACKAGES} \
 grub2-common grub-efi grub-efi-amd64 \
-${LANGUAGE_PACKAGES}  \
+${LANGUAGE_PACKAGES} \
 console-data console-setup locales task-spanish task-spanish-desktop \
-${UNATTENDED_UPGRADES_PACKAGES}  \
+${UNATTENDED_UPGRADES_PACKAGES} \
 unattended-upgrades apt-utils apt-listchanges \
-nfs-kernel-server nfs-common atftpd isc-dhcp-server"
+${SERVICES_PACKAGES} \
+nfs-kernel-server nfs-common tftpd-hpa isc-dhcp-server"
 
 DEBIAN_VERSION=bookworm
 

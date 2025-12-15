@@ -6,6 +6,8 @@ This project builds upon my previous work, ***"debian-multistrap"*** and ***"deb
 In this instance, the goal is to build a tftp and nfs server image from where a ipxe client can boot if dhcp sends it to this server :
 
 - Debian Bookworm with :
+  - NFS Server
+  - TFTP Server 
   - Unattended upgrades.
   - External latest :
     - Clonezilla recovery.

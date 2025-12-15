@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1039
+SCRIPT_DATE=20251215-1059
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -103,6 +103,11 @@ CLONEZILLA_KEYBOARD=latam
 DOWNLOAD_DIR_CLONEZILLA=${CACHE_FOLDER}/Clonezilla
 BASEURL_CLONEZILLA_FAST="https://free.nchc.org.tw/clonezilla-live/stable/"
 BASEURL_CLONEZILLA_SLOW="https://sourceforge.net/projects/clonezilla/files/latest/download"
+
+# Keyboard Language for TTY consoles
+KEYBOARD_FIX_URL="https://mirrors.edge.kernel.org/pub/linux/utils/kbd"
+KEYBOARD_MAPS=$(curl -s ${KEYBOARD_FIX_URL}/ | grep tar.gz | cut -d'"' -f2 | tail -n1)
+KEYBOARD_MAPS_DOWNLOAD_DIR=${CACHE_FOLDER}/Keyboard_maps/
 
 # Apt certificate repository folder
 APT_CONFIG="`command -v apt-config 2> /dev/null`"

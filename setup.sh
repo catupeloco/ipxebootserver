@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1105
+SCRIPT_DATE=20251215-1423
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -32,6 +32,11 @@ else
               menu_options+=("/dev/$name" "$size")
         done <<< "$disk_list"
         DEVICE=$(whiptail --title "Disk selection" --menu "Choose a disk from below and press enter to begin:" 20 60 10 "${menu_options[@]}" 3>&1 1>&2 2>&3)
+        #####################################################################################################
+        MIRROR_CLONEZILLA=$(whiptail --title "Select Clonezilla mirror" --menu "Choose one option:" 20 60 10 \
+               "Official_Fast" "NCHC - Taiwan" \
+               "Official_Slow" "SourceForge" \
+               3>&1 1>&2 2>&3)
 
         #####################################################################################################
         username=$(whiptail --title "Local admin creation" --inputbox "Type a username:" 20 60  3>&1 1>&2 2>&3)

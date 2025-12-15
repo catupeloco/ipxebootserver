@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1724
+SCRIPT_DATE=20251215-1749
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -384,6 +384,7 @@ sed -i 's/timeout=5/timeout=0/g'                                                
 sed -i '/### BEGIN \/etc\/grub.d\/10_linux ###/,/### END \/etc\/grub.d\/10_linux ###/d'                 /mnt/%%BASE%%2/boot/grub/grub.cfg
 sed -i '/### BEGIN \/etc\/grub.d\/30_uefi-firmware ###/,/### END \/etc\/grub.d\/30_uefi-firmware ###/d' /mnt/%%BASE%%2/boot/grub/grub.cfg
 sed -i '/##PREFIX##/,/##SUFIX##/d' /home/partimag/boot/grub/grub.cfg
+cd
 umount /dev/%%BASE%%2
 "> ${RECOVERYFS}/clean
 chmod +x ${RECOVERYFS}/clean

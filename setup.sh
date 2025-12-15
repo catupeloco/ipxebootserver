@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1101
+SCRIPT_DATE=20251215-1105
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -244,7 +244,7 @@ echo "Formating partitions ----------------------------------------"
 cleaning_screen
 echo "Downloading external software -------------------------------"
         echo "---Pretasks"
-        mkdir -p $KEYBOARD_MAPS_DOWNLOAD_DIR    >/dev/null 2>&1
+        mkdir -p $KEYBOARD_MAPS_DOWNLOAD_DIR    >/dev/null 2>&1 || true
         mkdir -p $DOWNLOAD_DIR_CLONEZILLA       >/dev/null 2>&1 || true
         case ${MIRROR_CLONEZILLA} in
                 Official_Fast )

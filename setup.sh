@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251214-1351
+SCRIPT_DATE=20251214-2218
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -114,25 +114,19 @@ INCLUDES_DEB="${RAMDISK_AND_SYSTEM_PACKAGES} \
 apt initramfs-tools zstd gnupg systemd linux-image-amd64 login btrfs-progs \
 task-web-server task-ssh-server \
 ${COMMANDLINE_TOOLS} \
-sudo vim wget curl dialog nano file less pciutils lshw usbutils bind9-dnsutils fdisk file git gh build-essential ncdu \
-whiptail \
+sudo vim wget curl dialog nano file less pciutils lshw usbutils bind9-dnsutils fdisk file git gh build-essential ncdu whiptail \
 ${CRON_TOOLS} \
 anacron cron cron-daemon-common \
 ${NETWORK_PACKAGES_AND_DRIVERS} \
 bind9-host dfu-util dnsmasq-base ethtool ifupdown iproute2 iputils-ping isc-dhcp-client network-manager  \
-powermgmt-base util-linux wpasupplicant xfce4-power-manager xfce4-power-manager-plugins \
-firmware-ath9k-htc firmware-linux firmware-linux-free firmware-realtek \
-amd64-microcode intel-microcode \
+powermgmt-base util-linux firmware-ath9k-htc firmware-linux firmware-linux-free firmware-realtek amd64-microcode intel-microcode \
 ${BOOT_PACKAGES}  \
 grub2-common grub-efi grub-efi-amd64 \
 ${LANGUAGE_PACKAGES}  \
-console-data console-setup locales \
-task-spanish task-spanish-desktop \
+console-data console-setup locales task-spanish task-spanish-desktop \
 ${UNATTENDED_UPGRADES_PACKAGES}  \
 unattended-upgrades apt-utils apt-listchanges \
-nfs-kernel-server nfs-common \
-atftpd \
-isc-dhcp-server"
+nfs-kernel-server nfs-common atftpd isc-dhcp-server"
 
 DEBIAN_VERSION=bookworm
 
@@ -241,6 +235,148 @@ echo "Formating partitions ----------------------------------------"
 	mkfs.ext4  -L CLONEZILLA "${DEVICE}"3 -F       >/dev/null 2>&1 || true
 	mkfs.ext4  -L RESOURCES  "${DEVICE}"4 -F       >/dev/null 2>&1 || true
 
+###########################Parallel Downloads fixes############################################
+cleaning_screen
+echo "Downloading external software -------------------------------"
+        echo "---Pretasks"
+        mkdir -p $KEYBOARD_MAPS_DOWNLOAD_DIR    >/dev/null 2>&1
+        mkdir -p $DOWNLOAD_DIR_CLONEZILLA       >/dev/null 2>&1 || true
+        case ${MIRROR_CLONEZILLA} in
+                Official_Fast )
+                        FILE_CLONEZILLA=$(curl -s "$BASEURL_CLONEZILLA_FAST" | grep -oP 'href="\Kclonezilla-live-[^"]+?\.zip(?=")' | head -n 1)
+                        CLONEZILLA_ORIGIN=${BASEURL_CLONEZILLA_FAST}${FILE_CLONEZILLA} ;;
+                Official_Slow )
+                        URL_CLONEZILLA=$(curl -S "$BASEURL_CLONEZILLA_SLOW" 2>/dev/null|grep https| cut -d \" -f 2)
+                        FILE_CLONEZILLA=$(echo "$URL_CLONEZILLA" | cut -f8 -d\/ | cut -f1 -d \?)
+                        CLONEZILLA_ORIGIN=${URL_CLONEZILLA} ;;
+        esac
+
+        let "PROGRESS_BAR_CURRENT += 1"
+        echo "---Parallel Downloading of Keyboard Maps, Libreoffice, Draw.io, MarkText and Clonezilla"
+FILES_TO_DOWNLOAD=(
+"${KEYBOARD_MAPS_DOWNLOAD_DIR}/${KEYBOARD_MAPS}"
+   "${DOWNLOAD_DIR_CLONEZILLA}/${FILE_CLONEZILLA}"
+)
+
+# List of origins and destinations parallel downloads
+cat << EOF > /tmp/downloads.list
+${KEYBOARD_FIX_URL}/${KEYBOARD_MAPS}
+  dir=${KEYBOARD_MAPS_DOWNLOAD_DIR}
+  out=${KEYBOARD_MAPS}
+${CLONEZILLA_ORIGIN}
+  dir=${DOWNLOAD_DIR_CLONEZILLA}
+  out=${FILE_CLONEZILLA}
+EOF
+PENDING="SOMETHING"
+while [ ! -z "$PENDING" ] ; do
+        # -i                                    : Read URLs from input file
+        # -j 5                                  : Run 5 paralell downloads
+        # -x 4                                  : Uses up to 4 connections per server on each file
+        # -c                                    : Resume broken downloads
+        # --allow-overwrite=true                : Always redownload
+        # --allow-overwrite=false               : NOT redownload
+        # --continue=true                       : Resumes interrupted downloads
+        # --auto-file-renaming=false            : With this out works as expected
+        # --truncate-console-readout=true       : Single line output
+        # --console-log-level=warn              : Minimize verbose output
+        # --download-result=hide                : Minimize verbose output
+        # --summary-interval=0                  : Minimize verbose output
+        aria2c \
+        -i /tmp/downloads.list \
+        -j 5 \
+        -x 4 \
+        -c \
+        --allow-overwrite=true \
+        --auto-file-renaming=false \
+        --truncate-console-readout=true \
+        --console-log-level=warn \
+        --download-result=hide \
+        --summary-interval=0
+        set +e
+        PENDING=""
+        for FILE in "${FILES_TO_DOWNLOAD[@]}"; do
+                if [[ ! -f "$FILE" ]]; then
+                    PENDING+=("$FILE")
+                fi
+        done
+        ls -la "${FILES_TO_DOWNLOAD[@]}" >/dev/null || true
+        set -e
+        sleep 5
+done
+
+###########################Parallel Downloads fixes############################################
+
+        let "PROGRESS_BAR_CURRENT += 1"
+        echo "---Extracting clonezilla"
+        unzip -u ${DOWNLOAD_DIR_CLONEZILLA}/${FILE_CLONEZILLA} -d ${RECOVERYFS} >>$LOG 2>>$ERR
+        cp -p ${RECOVERYFS}/boot/grub/grub.cfg ${RECOVERYFS}/boot/grub/grub.cfg.old
+        sed -i '/menuentry[^}]*{/,/}/d' ${RECOVERYFS}/boot/grub/grub.cfg
+        sed -i '/submenu[^}]*{/,/}/d' ${RECOVERYFS}/boot/grub/grub.cfg
+        mv ${RECOVERYFS}/live ${RECOVERYFS}/live-hd
+
+        let "PROGRESS_BAR_CURRENT += 1"
+        echo "---Creating grub.cfg for clonezilla"
+        set +e ###################################
+        if   fdisk -l | grep -c nvme0n1 | grep 5 >/dev/null ; then BASE=nvme0n1p
+        elif fdisk -l | grep -c sda     | grep 5 >/dev/null ; then BASE=sda
+        elif fdisk -l | grep -c xvda    | grep 5 >/dev/null ; then BASE=xvda
+        elif fdisk -l | grep -c vda     | grep 5 >/dev/null ; then BASE=vda
+        fi
+        set -e ##################################
+
+
+# Recovery Grub Menu
+echo '
+##PREFIX##
+menuentry  --hotkey=s "Salvar imagen"{
+  search --set -f /live-hd/vmlinuz
+  linux /live-hd/vmlinuz boot=live union=overlay username=user config components quiet noswap edd=on nomodeset noprompt noeject locales=en_US.UTF-8 keyboard-layouts=%%KEYBOARD%% ocs_prerun="mount /dev/%%BASE%%2 /home/partimag" ocs_live_run="/usr/sbin/ocs-sr -q2 -b -j2 -z1p -i 4096 -sfsck -scs -enc -p poweroff saveparts debian_image %%BASE%%1 %%BASE%%3" ocs_postrun="/home/partimag/clean" ocs_live_extra_param="" keyboard-layouts="%%KEYBOARD%%" ocs_live_batch="yes" vga=788 toram=live-hd,syslinux,EFI ip= net.ifnames=0 i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.enable_fbdev=1 live-media-path=/live-hd bootfrom=/dev/%%BASE%%2
+  initrd /live-hd/initrd.img
+}
+##SUFIX##
+menuentry  --hotkey=r "Restaurar imagen"{
+  search --set -f /live-hd/vmlinuz
+  linux /live-hd/vmlinuz boot=live union=overlay username=user config components quiet noswap edd=on nomodeset noprompt noeject locales=en_US.UTF-8 keyboard-layouts=%%KEYBOARD%% ocs_prerun="mount /dev/%%BASE%%2 /home/partimag" ocs_live_run="ocs-sr -g auto -e1 auto -e2 -t -r -j2 -b -k -scr -p reboot restoreparts debian_image %%BASE%%1 %%BASE%%3" ocs_live_extra_param="" keyboard-layouts="%%KEYBOARD%%" ocs_live_batch="yes" vga=788 toram=live-hd,syslinux,EFI ip= net.ifnames=0 i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.enable_fbdev=1 live-media-path=/live-hd bootfrom=/dev/%%BASE%%2
+  initrd /live-hd/initrd.img
+}' >> ${RECOVERYFS}/boot/grub/grub.cfg
+
+        let "PROGRESS_BAR_CURRENT += 1"
+        echo "---Post image creation cleaning script"
+echo "
+mkdir /mnt/%%BASE%%3 /mnt/%%BASE%%4 2>/dev/null
+mount /dev/%%BASE%%3 /mnt/%%BASE%%3 2>/dev/null
+mount /dev/%%BASE%%4 /mnt/%%BASE%%4 2>/dev/null
+
+cd /mnt/%%BASE%%3/
+rm -rf \$(ls /mnt/%%BASE%%3/ | grep -v boot)
+FILES=\$(find /mnt/%%BASE%%4/ -type f | wc -l) 
+answer=empty
+echo Do you wish to purge resources filesystem\? \(y\/n\)
+read answer
+if [ \"\$answer\" != \"n\" ] && [ \"\$answer\" != \"N\" ] ; then
+        echo Cleaning \$FILES files
+        rm -rf /mnt/%%BASE%%4/*
+else
+        echo NOT\!\! Cleaning \$FILES files
+fi
+
+sed -i 's/timeout=30/timeout=0/g'                                                                       /mnt/%%BASE%%3/boot/grub/grub.cfg
+sed -i 's/timeout=5/timeout=0/g'                                                                        /mnt/%%BASE%%3/boot/grub/grub.cfg
+sed -i '/### BEGIN \/etc\/grub.d\/10_linux ###/,/### END \/etc\/grub.d\/10_linux ###/d'                 /mnt/%%BASE%%3/boot/grub/grub.cfg
+sed -i '/### BEGIN \/etc\/grub.d\/30_uefi-firmware ###/,/### END \/etc\/grub.d\/30_uefi-firmware ###/d' /mnt/%%BASE%%3/boot/grub/grub.cfg
+sed -i '/##PREFIX##/,/##SUFIX##/d' /home/partimag/boot/grub/grub.cfg
+umount /dev/%%BASE%%3
+umount /dev/%%BASE%%4
+"> ${RECOVERYFS}/clean
+chmod +x ${RECOVERYFS}/clean
+
+# Customizing Clonezilla Menu
+sed -i 's/timeout=30/timeout=5/g'                ${RECOVERYFS}/boot/grub/grub.cfg
+sed -i 's/%%KEYBOARD%%/'$CLONEZILLA_KEYBOARD'/g' ${RECOVERYFS}/boot/grub/grub.cfg
+sed -i 's/%%BASE%%/'$BASE'/g'                    ${RECOVERYFS}/boot/grub/grub.cfg
+sed -i 's/%%BASE%%/'$BASE'/g'                    ${RECOVERYFS}/clean
+
+
 cleaning_screen
 echo "Mounting OS partition ---------------------------------------"
         mkdir -p ${ROOTFS}                                      > /dev/null 2>&1
@@ -308,16 +444,34 @@ echo "Getting ready for chroot ------------------------------------"
         mount -t tmpfs tmpfs ${ROOTFS}/tmp
 
 cleaning_screen
-echo "Setting Keyboard maps for non graphical console -------------"
+echo "Setting Keyboard --------------------------------------------"
+        echo "---For non graphical console"
         # FIX DEBIAN BUG
-        keyboard_maps=$(curl -s https://mirrors.edge.kernel.org/pub/linux/utils/kbd/ | grep tar.gz | cut -d'"' -f2 | tail -n1)
-        where_am_i=$PWD
-        wget -O $keyboard_maps https://mirrors.edge.kernel.org/pub/linux/utils/kbd/$keyboard_maps >>$LOG 2>>$ERR
         cd /tmp
-        tar xzvf $where_am_i/$keyboard_maps   >>$LOG 2>>$ERR
+        tar xzvf ${KEYBOARD_MAPS_DOWNLOAD_DIR}/"${KEYBOARD_MAPS}"   >>$LOG 2>>$ERR
         cd kbd-*/data/keymaps/
         mkdir -p ${ROOTFS}/usr/share/keymaps/
-        cp -r * ${ROOTFS}/usr/share/keymaps/  >>$LOG 2>>$ERR
+        cp -r ./* ${ROOTFS}/usr/share/keymaps/  >>$LOG 2>>$ERR
+
+        let "PROGRESS_BAR_CURRENT += 1"
+        echo "---For everything else"
+        echo 'XKBLAYOUT="latam"' > ${ROOTFS}/etc/default/keyboard
+
+cleaning_screen 
+echo "Creating recovery -------------------------------------------"
+# Grub shortcut to Clonezilla Grub
+echo '#!/bin/sh
+exec tail -n +3 $0
+# This file provides an easy way to add custom menu entries.  Simply type the
+# menu entries you want to add after this comment.  Be careful not to change
+# the exec tail line above.
+
+# Particion para restaurar
+menuentry "Restaurar" {
+   insmod chain
+   search --no-floppy --set=root -f /live-hd/vmlinuz
+   chainloader ($root)/EFI/boot/grubx64.efi
+}'> ${ROOTFS}/etc/grub.d/40_custom
 
 cleaning_screen
 echo "Entering chroot ---------------------------------------------"

@@ -3,7 +3,7 @@
 # Introduction
 
 This project builds upon my previous work, ***"debian-multistrap"*** and ***"debian-clonezilla-multistrap"*** , which was designed to set up an X2go server and a laptop.
-In this instance, the goal is to build a tftp and nfs server image from where a ipxe client cant boot if dhcp sends it to this server :
+In this instance, the goal is to build a tftp and nfs server image from where a ipxe client can boot if dhcp sends it to this server :
 
 - Debian Bookworm with :
   - Unattended upgrades.

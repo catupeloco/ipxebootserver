@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1445
+SCRIPT_DATE=20251215-1459
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -327,8 +327,8 @@ echo "----Cleaning files just in case"
 
         let "PROGRESS_BAR_CURRENT += 1"
         echo "---Extracting clonezilla"
-        echo unzip -u ${DOWNLOAD_DIR_CLONEZILLA}/${FILE_CLONEZILLA} -d ${RECOVERYFS} # >>$LOG 2>>$ERR
-        unzip -u ${DOWNLOAD_DIR_CLONEZILLA}/${FILE_CLONEZILLA} -d ${RECOVERYFS} # >>$LOG 2>>$ERR
+        #unzip -u ${DOWNLOAD_DIR_CLONEZILLA}/${FILE_CLONEZILLA} -d ${RECOVERYFS} # >>$LOG 2>>$ERR
+        unzip -u ${DOWNLOAD_DIR_CLONEZILLA}/*                   -d ${RECOVERYFS} # >>$LOG 2>>$ERR
         cp -p ${RECOVERYFS}/boot/grub/grub.cfg ${RECOVERYFS}/boot/grub/grub.cfg.old
         sed -i '/menuentry[^}]*{/,/}/d' ${RECOVERYFS}/boot/grub/grub.cfg
         sed -i '/submenu[^}]*{/,/}/d' ${RECOVERYFS}/boot/grub/grub.cfg

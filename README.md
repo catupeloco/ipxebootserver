@@ -158,5 +158,3 @@ GOOD THINGS TAKE TIME.
     - This is done to reduce the size of the disk image created earlier.
 
 # Enjoy :rocket:
-
-# Enjoy :rocket:

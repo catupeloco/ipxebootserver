@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1459
+SCRIPT_DATE=20251215-1528
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -26,6 +26,7 @@ else
         netselect-apt -n -s -a amd64 trixie 2>&1 | grep -A1 "fastest valid for http" | tail -n1 > /tmp/fastest_repo &
         REPOSITORY_DEB_PID=$!
 
+        #####################################################################################################
         disk_list=$(lsblk -dn -o NAME,SIZE,TYPE | awk '$3=="disk"{print $1,$2}')
         menu_options=()
         while read -r name size; do
@@ -153,7 +154,8 @@ echo "============================================================="
 echo "Installing on Device ${DEVICE} with ${username} as local admin :
         - Debian ${DEBIAN_VERSION} from ${REPOSITORY_DEB} (FASTEST REPOSITORY at your location) with :
                 - BTRFS, GRUB-BTRFS and Timeshift for snapshots of root file system.
-                - Unattended upgrades, Virtual Machine Manager (KVM/QEMU).
+                - Unattended upgrades.
+	        - Clonezilla recovery.
 To follow extra details, use: Alt plus left or right arrows"
 grep iso /proc/cmdline >/dev/null && \
 echo "For remote access during installation, you can connect remotely : ssh user@$LOCALIP (password is \"live\") "
@@ -194,6 +196,10 @@ set +e
         fi
 set -e
 
+#####################################################################################################
+#Setting device's partitions
+#####################################################################################################
+
 cleaning_screen
 echo "Unmounting ${DEVICE}  ----------------------------------------"
         umount ${DEVICE}*               2>/dev/null || true
@@ -209,26 +215,25 @@ echo "Unmounting ${DEVICE}  ----------------------------------------"
 
 cleaning_screen
 echo "Setting partition table to GPT (UEFI) -----------------------"
-        parted ${DEVICE} --script mktable gpt                   > /dev/null 2>&1
+        parted ${DEVICE} --script mktable gpt                   					> /dev/null 2>&1
 
 cleaning_screen
 echo "Creating EFI partition --------------------------------------"
-        parted ${DEVICE} --script mkpart EFI fat32 ${PART_EFI_START}MiB ${PART_EFI_END}MiB   > /dev/null 2>&1
-        parted ${DEVICE} --script set 1 esp on                               > /dev/null 2>&1
+        parted ${DEVICE} --script mkpart EFI fat32 ${PART_EFI_START}MiB ${PART_EFI_END}MiB		> /dev/null 2>&1
+        parted ${DEVICE} --script set 1 esp on                               				> /dev/null 2>&1
 
 cleaning_screen	
 echo "Creating OS partition ---------------------------------------"
-        parted "${DEVICE}" --script mkpart LINUX btrfs ${PART_OS_START}MiB ${PART_OS_END}MiB    # >/dev/null 2>&1
+        parted "${DEVICE}" --script mkpart LINUX btrfs ${PART_OS_START}MiB ${PART_OS_END}MiB    	>/dev/null 2>&1
         sleep 2
 
 cleaning_screen	
 echo "Creating Clonezilla partition -------------------------------"
-        parted "${DEVICE}" --script mkpart CLONEZILLA ext4 ${PART_CZ_START}MiB ${PART_CZ_END}MiB # > /dev/null 2>&1
+        parted "${DEVICE}" --script mkpart CLONEZILLA ext4 ${PART_CZ_START}MiB ${PART_CZ_END}MiB	> /dev/null 2>&1
 
 cleaning_screen	
 echo "Creating Overprovisioning partition -------------------------------"
-        parted "${DEVICE}" --script mkpart RESOURCES ext4 ${PART_OP_START}MiB ${PART_OP_END}MiB # > /dev/null 2>&1
-
+        parted "${DEVICE}" --script mkpart RESOURCES ext4 ${PART_OP_START}MiB ${PART_OP_END}MiB		> /dev/null 2>&1
 
 cleaning_screen
 echo "Formating partitions ----------------------------------------"
@@ -245,7 +250,9 @@ echo "Formating partitions ----------------------------------------"
 	mkfs.ext4  -L CLONEZILLA "${DEVICE}"3 -F       >/dev/null 2>&1 || true
 	mkfs.ext4  -L RESOURCES  "${DEVICE}"4 -F       >/dev/null 2>&1 || true
 
-###########################Parallel Downloads fixes############################################
+#####################################################################################################
+# Downloads
+#####################################################################################################
 cleaning_screen
 echo "Downloading external software -------------------------------"
         echo "---Pretasks"
@@ -314,7 +321,9 @@ while [ ! -z "$PENDING" ] ; do
         sleep 5
 done
 
-###########################Parallel Downloads fixes############################################
+#####################################################################################################
+# Clonezilla
+#####################################################################################################
 echo -e "\n---Recovery partition"
         mkdir -p ${RECOVERYFS}                                  > /dev/null 2>&1
         mount "${DEVICE}"3 ${RECOVERYFS}                        > /dev/null 2>&1
@@ -328,7 +337,7 @@ echo "----Cleaning files just in case"
         let "PROGRESS_BAR_CURRENT += 1"
         echo "---Extracting clonezilla"
         #unzip -u ${DOWNLOAD_DIR_CLONEZILLA}/${FILE_CLONEZILLA} -d ${RECOVERYFS} # >>$LOG 2>>$ERR
-        unzip -u ${DOWNLOAD_DIR_CLONEZILLA}/*                   -d ${RECOVERYFS} # >>$LOG 2>>$ERR
+        unzip -u ${DOWNLOAD_DIR_CLONEZILLA}/*zip                -d ${RECOVERYFS} # >>$LOG 2>>$ERR
         cp -p ${RECOVERYFS}/boot/grub/grub.cfg ${RECOVERYFS}/boot/grub/grub.cfg.old
         sed -i '/menuentry[^}]*{/,/}/d' ${RECOVERYFS}/boot/grub/grub.cfg
         sed -i '/submenu[^}]*{/,/}/d' ${RECOVERYFS}/boot/grub/grub.cfg
@@ -343,7 +352,6 @@ echo "----Cleaning files just in case"
         elif fdisk -l | grep -c vda     | grep 5 >/dev/null ; then BASE=vda
         fi
         set -e ##################################
-
 
 # Recovery Grub Menu
 echo '
@@ -396,6 +404,9 @@ sed -i 's/%%KEYBOARD%%/'$CLONEZILLA_KEYBOARD'/g' ${RECOVERYFS}/boot/grub/grub.cf
 sed -i 's/%%BASE%%/'$BASE'/g'                    ${RECOVERYFS}/boot/grub/grub.cfg
 sed -i 's/%%BASE%%/'$BASE'/g'                    ${RECOVERYFS}/clean
 
+#####################################################################################################
+# Debian
+#####################################################################################################
 
 cleaning_screen
 echo "Mounting OS partition ---------------------------------------"

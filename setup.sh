@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1541
+SCRIPT_DATE=20251215-1615
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -359,43 +359,30 @@ echo '
 ##PREFIX##
 menuentry  --hotkey=s "Salvar imagen"{
   search --set -f /live-hd/vmlinuz
-  linux /live-hd/vmlinuz boot=live union=overlay username=user config components quiet noswap edd=on nomodeset noprompt noeject locales=en_US.UTF-8 keyboard-layouts=%%KEYBOARD%% ocs_prerun="mount /dev/%%BASE%%2 /home/partimag" ocs_live_run="/usr/sbin/ocs-sr -q2 -b -j2 -z1p -i 4096 -sfsck -scs -enc -p poweroff saveparts debian_image %%BASE%%1 %%BASE%%3" ocs_postrun="/home/partimag/clean" ocs_live_extra_param="" keyboard-layouts="%%KEYBOARD%%" ocs_live_batch="yes" vga=788 toram=live-hd,syslinux,EFI ip= net.ifnames=0 i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.enable_fbdev=1 live-media-path=/live-hd bootfrom=/dev/%%BASE%%2
+  linux /live-hd/vmlinuz boot=live union=overlay username=user config components quiet noswap edd=on nomodeset noprompt noeject locales=en_US.UTF-8 keyboard-layouts=%%KEYBOARD%% ocs_prerun="mount /dev/%%BASE%%3 /home/partimag" ocs_live_run="/usr/sbin/ocs-sr -q2 -b -j2 -z1p -i 4096 -sfsck -scs -p reboot saveparts debian_image %%BASE%%1 %%BASE%%2" ocs_postrun="/home/partimag/clean" ocs_live_extra_param="" keyboard-layouts="%%KEYBOARD%%" ocs_live_batch="yes" vga=788 toram=live-hd,syslinux,EFI ip= net.ifnames=0 i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.enable_fbdev=1 live-media-path=/live-hd bootfrom=/dev/%%BASE%%3
   initrd /live-hd/initrd.img
 }
 ##SUFIX##
 menuentry  --hotkey=r "Restaurar imagen"{
   search --set -f /live-hd/vmlinuz
-  linux /live-hd/vmlinuz boot=live union=overlay username=user config components quiet noswap edd=on nomodeset noprompt noeject locales=en_US.UTF-8 keyboard-layouts=%%KEYBOARD%% ocs_prerun="mount /dev/%%BASE%%2 /home/partimag" ocs_live_run="ocs-sr -g auto -e1 auto -e2 -t -r -j2 -b -k -scr -p reboot restoreparts debian_image %%BASE%%1 %%BASE%%3" ocs_live_extra_param="" keyboard-layouts="%%KEYBOARD%%" ocs_live_batch="yes" vga=788 toram=live-hd,syslinux,EFI ip= net.ifnames=0 i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.enable_fbdev=1 live-media-path=/live-hd bootfrom=/dev/%%BASE%%2
+  linux /live-hd/vmlinuz boot=live union=overlay username=user config components quiet noswap edd=on nomodeset noprompt noeject locales=en_US.UTF-8 keyboard-layouts=%%KEYBOARD%% ocs_prerun="mount /dev/%%BASE%%3 /home/partimag" ocs_live_run="ocs-sr -g auto -e1 auto -e2 -t -r -j2 -b -k -scr -p reboot restoreparts debian_image %%BASE%%1 %%BASE%%2" ocs_live_extra_param="" keyboard-layouts="%%KEYBOARD%%" ocs_live_batch="yes" vga=788 toram=live-hd,syslinux,EFI ip= net.ifnames=0 i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.enable_fbdev=1 live-media-path=/live-hd bootfrom=/dev/%%BASE%%3
   initrd /live-hd/initrd.img
 }' >> ${RECOVERYFS}/boot/grub/grub.cfg
 
         let "PROGRESS_BAR_CURRENT += 1"
         echo "---Post image creation cleaning script"
 echo "
-mkdir /mnt/%%BASE%%3 /mnt/%%BASE%%4 2>/dev/null
-mount /dev/%%BASE%%3 /mnt/%%BASE%%3 2>/dev/null
-mount /dev/%%BASE%%4 /mnt/%%BASE%%4 2>/dev/null
+mkdir /mnt/%%BASE%%2                2>/dev/null
+mount /dev/%%BASE%%2 /mnt/%%BASE%%2 2>/dev/null
 
-cd /mnt/%%BASE%%3/
-rm -rf \$(ls /mnt/%%BASE%%3/ | grep -v boot)
-FILES=\$(find /mnt/%%BASE%%4/ -type f | wc -l) 
-answer=empty
-echo Do you wish to purge resources filesystem\? \(y\/n\)
-read answer
-if [ \"\$answer\" != \"n\" ] && [ \"\$answer\" != \"N\" ] ; then
-        echo Cleaning \$FILES files
-        rm -rf /mnt/%%BASE%%4/*
-else
-        echo NOT\!\! Cleaning \$FILES files
-fi
-
-sed -i 's/timeout=30/timeout=0/g'                                                                       /mnt/%%BASE%%3/boot/grub/grub.cfg
-sed -i 's/timeout=5/timeout=0/g'                                                                        /mnt/%%BASE%%3/boot/grub/grub.cfg
-sed -i '/### BEGIN \/etc\/grub.d\/10_linux ###/,/### END \/etc\/grub.d\/10_linux ###/d'                 /mnt/%%BASE%%3/boot/grub/grub.cfg
-sed -i '/### BEGIN \/etc\/grub.d\/30_uefi-firmware ###/,/### END \/etc\/grub.d\/30_uefi-firmware ###/d' /mnt/%%BASE%%3/boot/grub/grub.cfg
+cd /mnt/%%BASE%%2/
+rm -rf \$(ls /mnt/%%BASE%%2/ | grep -v boot)
+sed -i 's/timeout=30/timeout=0/g'                                                                       /mnt/%%BASE%%2/boot/grub/grub.cfg
+sed -i 's/timeout=5/timeout=0/g'                                                                        /mnt/%%BASE%%2/boot/grub/grub.cfg
+sed -i '/### BEGIN \/etc\/grub.d\/10_linux ###/,/### END \/etc\/grub.d\/10_linux ###/d'                 /mnt/%%BASE%%2/boot/grub/grub.cfg
+sed -i '/### BEGIN \/etc\/grub.d\/30_uefi-firmware ###/,/### END \/etc\/grub.d\/30_uefi-firmware ###/d' /mnt/%%BASE%%2/boot/grub/grub.cfg
 sed -i '/##PREFIX##/,/##SUFIX##/d' /home/partimag/boot/grub/grub.cfg
-umount /dev/%%BASE%%3
-umount /dev/%%BASE%%4
+umount /dev/%%BASE%%2
 "> ${RECOVERYFS}/clean
 chmod +x ${RECOVERYFS}/clean
 

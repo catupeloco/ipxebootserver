@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1423
+SCRIPT_DATE=20251215-1431
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -315,6 +315,15 @@ while [ ! -z "$PENDING" ] ; do
 done
 
 ###########################Parallel Downloads fixes############################################
+echo "---Recovery partition"
+        mkdir -p ${RECOVERYFS}                                  > /dev/null 2>&1
+        mount "${DEVICE}"2 ${RECOVERYFS}                        > /dev/null 2>&1
+
+        let "PROGRESS_BAR_CURRENT += 1"
+echo "----Cleaning files just in case"
+        # I DON'T KNOW WHY BUT FORMAT SOME TIMES DOESN'T WORK, SO RM FOR THE WIN
+        find ${RECOVERYFS} -type f -exec rm -rf {} \;           > /dev/null 2>&1
+        find ${RECOVERYFS} -type d -exec rm -rf {} \;           > /dev/null 2>&1
 
         let "PROGRESS_BAR_CURRENT += 1"
         echo "---Extracting clonezilla"

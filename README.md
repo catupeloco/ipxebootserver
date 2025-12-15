@@ -20,10 +20,10 @@ In this instance, the goal is to build a tftp and nfs server image from where a 
 - ***USB thumb drive :*** if you choose to use ```dd``` command, it will be formatted.
 - ***Laptop or desktop with:***
   - UEFI support.
-  - 32 GB or more storage. The drive will be partitioned as follows :
+  - 130 GB or more storage. The drive will be partitioned as follows :
     1. EFI partition
-    2. Clonezilla + Recovery partition
-    3. System partition
+    2. System partition
+    3. Clonezilla + Recovery partition
     4. Temporary partition to download resources (can be deleted afterward to allow for [Over-provisioning](https://www.kingston.com/en/blog/pc-performance/overprovisioning)
 
 # Installation Steps.
@@ -148,7 +148,7 @@ GOOD THINGS TAKE TIME.
 
 - ## Optional : Take a full disk image.
   
-  - Boot the PC using a USB drvie with your preferred imaging software.
+  - Boot the PC using a USB drive with your preferred imaging software.
   - Connect an external storage to allocate the image.
   - Follow the software's manual steps to capture the image.
 
@@ -156,7 +156,5 @@ GOOD THINGS TAKE TIME.
   
   - On the first boot, the device will automatically restore itself.
     - This is done to reduce the size of the disk image created earlier.
-
-# Enjoy :rocket:
 
 # Enjoy :rocket:

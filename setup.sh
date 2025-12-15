@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPT_DATE=20251215-1528
+SCRIPT_DATE=20251215-1539
 set -e # Exit on error
 LOG=/tmp/server.log
 ERR=/tmp/server.err
@@ -129,7 +129,7 @@ sudo vim wget curl dialog nano file less pciutils lshw usbutils bind9-dnsutils f
 ${CRON_TOOLS} \
 anacron cron cron-daemon-common \
 ${NETWORK_PACKAGES_AND_DRIVERS} \
-bind9-host dfu-util dnsmasq-base ethtool ifupdown iproute2 iputils-ping isc-dhcp-client network-manager  \
+bind9-host dfu-util dnsmasq-base ethtool ifupdown iproute2 iputils-ping isc-dhcp-client network-manager net-tools ufw \
 powermgmt-base util-linux firmware-ath9k-htc firmware-linux firmware-linux-free firmware-realtek amd64-microcode intel-microcode \
 ${BOOT_PACKAGES}  \
 grub2-common grub-efi grub-efi-amd64 \
